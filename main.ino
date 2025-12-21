@@ -2,11 +2,17 @@
 
 const int DIN = 11;
 const int CLK = 13;
-const int CS  = 10;
+const int CS  = 12;
 const int UNITS = 4;  
-const int INCREMENT_BTN = 2;
+const int INCREMENT_BTN = 7;
 
-int count = 0;
+// RGB LED stuff 
+const int RED = 3;
+const int GREEN = 9;
+const int BLUE = 10;
+
+// start at -1 so it shows 0 at startup 
+int count = -1;
 
 const byte digits[10][8] = {
   {B00111100,B01100110,B01100110,B01100110,B01100110,B01100110,B01100110,B00111100},
@@ -21,10 +27,32 @@ const byte digits[10][8] = {
   {B00111100,B01100110,B01100000,B01111100,B01100110,B01100110,B01100110,B00111100}
 };
 
+const byte digitColors[9][3] = {
+  { 30,  90,  90},   // 1 - Ice Cyan (no red dominance)
+  { 40, 110,  40},   // 2 - Soft Green
+  { 20,  70, 120},   // 3 - Cool Blue
+  { 10, 130,  80},   // 4 - Mint
+  {  0, 100, 140},   // 5 - Deep Cyan
+  { 15,  60, 160},   // 6 - True Blue
+  { 40,  50, 120},   // 7 - Indigo (tiny red)
+  { 10, 120,  60 },   // 8 - Acid Lime / Green-Cyan
+  { 80,  90, 100}    // 9 - Neutral White (red minimized)
+};
+
+
 LedControl lc(DIN, CLK, CS, UNITS);
 
 void setup() {
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  pinMode(BLUE, OUTPUT);
+
   pinMode(INCREMENT_BTN, INPUT_PULLUP);
+
+  for (int i = 0; i < UNITS; i++) {
+  lc.setIntensity(i, 1);  // Lower brightness = less refresh interference
+  }
+
   clearDisplay();
 }
 
@@ -143,13 +171,30 @@ void zoomIn(int number) {
   delay(200);
 }
 
+void clearLED() {
+    analogWrite(RED, 0);
+    analogWrite(GREEN, 0);
+    analogWrite(BLUE, 0);
+}
+void emitColorOnLED() {
+  if (count == 0) {
+    clearLED();
+  } else {
+    analogWrite(RED, digitColors[count - 1][0]);
+    analogWrite(GREEN, digitColors[count - 1][1]);
+    analogWrite(BLUE, digitColors[count - 1][2]);
+  }
+}
+
 void loop() {
+  
   if (digitalRead(INCREMENT_BTN) == HIGH) {
     count++;
-    if (count > 9) count = 1;
+    if (count > 9) count = 0;
     
     clearDisplay();
-    
+    emitColorOnLED();
+
     // Choose animation sequence
     flashAll(count, 2);      // Flash 2 times
     delay(300);
@@ -167,6 +212,7 @@ void loop() {
     clearDisplay();
     showNumber();
     
+
     while (digitalRead(INCREMENT_BTN) == HIGH);
   }
 }
