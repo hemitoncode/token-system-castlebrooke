@@ -35,9 +35,10 @@ const byte digitColors[9][3] = {
   {  0, 100, 140},   // 5 - Deep Cyan
   { 15,  60, 160},   // 6 - True Blue
   { 40,  50, 120},   // 7 - Indigo (tiny red)
-  { 10, 120,  60 },   // 8 - Acid Lime / Green-Cyan
+  { 20, 140,  20 },  // Neon Green
   { 80,  90, 100}    // 9 - Neutral White (red minimized)
 };
+
 
 
 LedControl lc(DIN, CLK, CS, UNITS);
