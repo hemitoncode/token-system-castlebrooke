@@ -206,10 +206,9 @@ void loop() {
   
   // RESET - just check if button is pressed
   if (digitalRead(RESET_BTN) == LOW) {
-    count = 0;
-    clearDisplay();
+    count--;
+    emitColorOnLED();
     showNumber();
-    clearLED();
     delay(200);  // Simple delay to avoid repeat
   }
   
