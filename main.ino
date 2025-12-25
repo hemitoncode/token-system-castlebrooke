@@ -205,7 +205,7 @@ void emitColorOnLED() {
 void loop() {
   
   // RESET - just check if button is pressed
-  if (digitalRead(RESET_BTN) == LOW) {
+  if (digitalRead(RESET_BTN) == LOW && count != 0) {
     count--;
     emitColorOnLED();
     showNumber();
