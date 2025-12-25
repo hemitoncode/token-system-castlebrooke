@@ -209,7 +209,8 @@ void loop() {
     count--;
     emitColorOnLED();
     showNumber();
-    delay(200);  // Simple delay to avoid repeat
+    playSound();
+    delay(1000);  // Simple delay to avoid repeat
   }
   
   // INCREMENT - check if button is pressed
