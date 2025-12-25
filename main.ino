@@ -4,15 +4,15 @@ const int DIN = 11;
 const int CLK = 13;
 const int CS  = 12;
 const int UNITS = 4;  
+const int RESET_BTN = 2;
 const int INCREMENT_BTN = 7;
 
-// RGB LED stuff 
 const int RED = 3;
 const int GREEN = 9;
 const int BLUE = 10;
+const int BUZZER = 4;
 
-// start at -1 so it shows 0 at startup 
-int count = -1;
+int count = 0;
 
 const byte digits[10][8] = {
   {B00111100,B01100110,B01100110,B01100110,B01100110,B01100110,B01100110,B00111100},
@@ -28,33 +28,60 @@ const byte digits[10][8] = {
 };
 
 const byte digitColors[9][3] = {
-  { 30,  90,  90},   // 1 - Ice Cyan (no red dominance)
+  { 30,  90,  90},   // 1 - Ice Cyan
   { 40, 110,  40},   // 2 - Soft Green
   { 20,  70, 120},   // 3 - Cool Blue
   { 10, 130,  80},   // 4 - Mint
   {  0, 100, 140},   // 5 - Deep Cyan
   { 15,  60, 160},   // 6 - True Blue
-  { 40,  50, 120},   // 7 - Indigo (tiny red)
-  { 20, 140,  20 },  // Neon Green
-  { 80,  90, 100}    // 9 - Neutral White (red minimized)
+  { 40,  50, 120},   // 7 - Indigo
+  { 20, 140,  20},   // 8 - Neon Green
+  { 80,  90, 100}    // 9 - Neutral White
 };
-
-
 
 LedControl lc(DIN, CLK, CS, UNITS);
 
 void setup() {
+  Serial.begin(9600);  // Add serial debugging
+  
   pinMode(RED, OUTPUT);
   pinMode(GREEN, OUTPUT);
   pinMode(BLUE, OUTPUT);
-
+  pinMode(BUZZER, OUTPUT);
   pinMode(INCREMENT_BTN, INPUT_PULLUP);
+  pinMode(RESET_BTN, INPUT_PULLUP);
 
   for (int i = 0; i < UNITS; i++) {
-  lc.setIntensity(i, 1);  // Lower brightness = less refresh interference
+    lc.setIntensity(i, 1);
   }
 
   clearDisplay();
+  showNumber();
+  
+  Serial.println("Setup complete!");
+}
+
+void playSound() {
+  tone(BUZZER, 659);
+  delay(150);
+  tone(BUZZER, 784);
+  delay(150);
+  tone(BUZZER, 880);
+  delay(150);
+  tone(BUZZER, 1047);
+  delay(400);
+  noTone(BUZZER);
+  delay(100);
+  
+  tone(BUZZER, 1047);
+  delay(200);
+  tone(BUZZER, 988);
+  delay(200);
+  tone(BUZZER, 880);
+  delay(200);
+  tone(BUZZER, 784);
+  delay(400);
+  noTone(BUZZER);
 }
 
 void clearDisplay() {
@@ -73,26 +100,20 @@ void showNumber() {
   }
 }
 
-// Flash on all units simultaneously
 void flashAll(int number, int times) {
   for (int i = 0; i < times; i++) {
-    // Show on all units
     for (int unit = 0; unit < UNITS; unit++) {
       for (int r = 0; r < 8; r++) {
         lc.setRow(unit, r, digits[number][r]);
       }
     }
     delay(150);
-    
-    // Clear all
     clearDisplay();
     delay(150);
   }
 }
 
-// Bounce back and forth between units
 void bounceNumber(int number) {
-  // Bounce right to left
   for (int unit = UNITS - 1; unit >= 0; unit--) {
     clearDisplay();
     for (int r = 0; r < 8; r++) {
@@ -101,7 +122,6 @@ void bounceNumber(int number) {
     delay(200);
   }
   
-  // Bounce left to right
   for (int unit = 1; unit < UNITS; unit++) {
     clearDisplay();
     for (int r = 0; r < 8; r++) {
@@ -110,7 +130,6 @@ void bounceNumber(int number) {
     delay(200);
   }
   
-  // Back to unit 0
   clearDisplay();
   for (int r = 0; r < 8; r++) {
     lc.setRow(0, r, digits[number][r]);
@@ -118,7 +137,6 @@ void bounceNumber(int number) {
   delay(200);
 }
 
-// Slide smoothly from right to left
 void slideNumber(int number) {
   for (int scroll = 32; scroll >= 0; scroll--) {
     clearDisplay();
@@ -141,14 +159,11 @@ void slideNumber(int number) {
         }
       }
     }
-    
     delay(40);
   }
 }
 
-// Zoom in effect - number grows from center
 void zoomIn(int number) {
-  // Start small in center
   for (int zoom = 0; zoom < 4; zoom++) {
     clearDisplay();
     
@@ -156,9 +171,9 @@ void zoomIn(int number) {
       for (int r = 0; r < 8; r++) {
         byte rowData = digits[number][r];
         
-        if (zoom == 0) rowData = rowData & B00011000;  // Tiny
-        else if (zoom == 1) rowData = rowData & B00111100;  // Small
-        else if (zoom == 2) rowData = rowData & B01111110;  // Medium
+        if (zoom == 0) rowData = rowData & B00011000;
+        else if (zoom == 1) rowData = rowData & B00111100;
+        else if (zoom == 2) rowData = rowData & B01111110;
         
         lc.setRow(unit, r, rowData);
       }
@@ -166,17 +181,17 @@ void zoomIn(int number) {
     delay(150);
   }
   
-  // Final full size on unit 0
   clearDisplay();
   showNumber();
   delay(200);
 }
 
 void clearLED() {
-    analogWrite(RED, 0);
-    analogWrite(GREEN, 0);
-    analogWrite(BLUE, 0);
+  analogWrite(RED, 0);
+  analogWrite(GREEN, 0);
+  analogWrite(BLUE, 0);
 }
+
 void emitColorOnLED() {
   if (count == 0) {
     clearLED();
@@ -189,31 +204,40 @@ void emitColorOnLED() {
 
 void loop() {
   
-  if (digitalRead(INCREMENT_BTN) == HIGH) {
+  // RESET - just check if button is pressed
+  if (digitalRead(RESET_BTN) == LOW) {
+    count = 0;
+    clearDisplay();
+    showNumber();
+    clearLED();
+    delay(200);  // Simple delay to avoid repeat
+  }
+  
+  // INCREMENT - check if button is pressed
+  if (digitalRead(INCREMENT_BTN) == LOW) {
     count++;
     if (count > 9) count = 0;
     
     clearDisplay();
     emitColorOnLED();
 
-    // Choose animation sequence
-    flashAll(count, 2);      // Flash 2 times
+    flashAll(count, 2);
+    delay(300);
+    bounceNumber(count);
+    delay(300);
+    slideNumber(count);
+    delay(300);
+    zoomIn(count);
     delay(300);
     
-    bounceNumber(count);     // Bounce back and forth
-    delay(300);
-    
-    slideNumber(count);      // Slide to position
-    delay(300);
-    
-    zoomIn(count);           // Zoom in effect
-    delay(300);
-        
-    // Final display
     clearDisplay();
     showNumber();
+    playSound();
     
-
-    while (digitalRead(INCREMENT_BTN) == HIGH);
+    // Wait for button release
+    while (digitalRead(INCREMENT_BTN) == LOW) {
+      delay(10);
+    }
+    delay(50);  // Extra delay after release
   }
 }
