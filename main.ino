@@ -27,6 +27,29 @@ const byte digits[10][8] = {
   {B00111100,B01100110,B01100000,B01111100,B01100110,B01100110,B01100110,B00111100}
 };
 
+const byte smileyFace[8] = {
+  B00000000,  // was row 7
+  B00111100,  // was row 6
+  B01000010,  // was row 5
+  B00000000,  // was row 4
+  B00000000,  // was row 3
+  B00100100,  // was row 2
+  B00100100,  // was row 1
+  B00000000   // was row 0
+};
+
+const byte hashtag[8] = {
+  B00100100,
+  B00100100,  //   #  #   
+  B00100100,  //   #  #   
+  B11111111,  // ########  horizontal bar 1
+  B11111111,  // ########  horizontal bar 2
+  B00100100,  //   #  #   
+  B00100100,  //   #  #   
+  B00100100
+};
+
+
 const byte digitColors[9][3] = {
   { 30,  90,  90},   // 1 - Ice Cyan
   { 40, 110,  40},   // 2 - Soft Green
@@ -93,23 +116,10 @@ void clearDisplay() {
 
 void showNumber() {
   for (int r = 0; r < 8; r++) {
-    lc.setRow(0, r, digits[count][r]);
+    lc.setRow(0, r, hashtag[r]);
     lc.setRow(1, r, digits[count][r]);
     lc.setRow(2, r, digits[count][r]);
-    lc.setRow(3, r, digits[count][r]);
-  }
-}
-
-void flashAll(int number, int times) {
-  for (int i = 0; i < times; i++) {
-    for (int unit = 0; unit < UNITS; unit++) {
-      for (int r = 0; r < 8; r++) {
-        lc.setRow(unit, r, digits[number][r]);
-      }
-    }
-    delay(150);
-    clearDisplay();
-    delay(150);
+    lc.setRow(3, r, smileyFace[r]);
   }
 }
 
@@ -221,8 +231,7 @@ void loop() {
     clearDisplay();
     emitColorOnLED();
 
-    flashAll(count, 2);
-    delay(300);
+    playSound();
     bounceNumber(count);
     delay(300);
     slideNumber(count);
@@ -232,7 +241,6 @@ void loop() {
     
     clearDisplay();
     showNumber();
-    playSound();
     
     // Wait for button release
     while (digitalRead(INCREMENT_BTN) == LOW) {
